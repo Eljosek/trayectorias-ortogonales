@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trayectorias Ortogonales</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --grid: #1e2a3a;
+    --axis: #3a4a5a;
+    --ellipse: #4a9eff;
+    --cubic: #ff4466;
+    --tangent: #44ff99;
+    --text: #e0e8f0;
+    --panel: #111820;
+    --accent: #4a9eff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    padding: 10px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--grid);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  header h1 {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.3rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  header .subtitle {
+    font-size: 0.65rem;
+    color: #556;
+    font-style: italic;
+    font-family: 'Crimson Pro', serif;
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    background: var(--panel);
+    border-right: 1px solid var(--grid);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    font-size: 0.72rem;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    color: #556;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--grid);
+    padding-bottom: 4px;
+  }
+
+  .alg-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  .alg-item:hover { background: #1a2330; }
+
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .alg-text { line-height: 1.4; }
+  .alg-name { color: #88aacc; font-size: 0.65rem; }
+  .alg-val { color: var(--text); }
+
+  .slider-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row label { color: #88aacc; width: 20px; }
+  .slider-row input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 4px;
+  }
+  .slider-row span { width: 40px; text-align: right; color: var(--text); }
+
+  .angle-box {
+    background: #0a1520;
+    border: 1px solid var(--grid);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+  }
+  .angle-val {
+    font-size: 1.4rem;
+    color: var(--tangent);
+    font-weight: 700;
+  }
+  .angle-lbl { font-size: 0.6rem; color: #556; margin-top: 2px; }
+
+  .formula-box {
+    background: #0a1520;
+    border: 1px solid #1e3a5a;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 0.65rem;
+    color: #88aacc;
+    line-height: 1.8;
+  }
+  .formula-box .eq { color: var(--text); }
+
+  /* CANVAS AREA */
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .coord-display {
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    font-size: 0.65rem;
+    color: #556;
+    background: rgba(13,17,23,0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--grid);
+  }
+
+  .legend {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 0.62rem;
+    background: rgba(13,17,23,0.9);
+    border: 1px solid var(--grid);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-line { width: 24px; height: 2px; border-radius: 2px; }
+
+  .hint {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    font-size: 0.6rem;
+    color: #334;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Trayectorias Ortogonales</h1>
+    <div class="subtitle">x² + 3y² = C &nbsp;⟂&nbsp; y = kx³</div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+
+    <div>
+      <div class="section-label">Vista Algebraica</div>
+
+      <div class="alg-item">
+        <div class="dot" style="background:#4a9eff"></div>
+        <div class="alg-text">
+          <div class="alg-name">Cónica</div>
+          <div class="alg-val" id="eq-conica">x² + 3y² = 5</div>
+        </div>
+      </div>
+
+      <div class="alg-item">
+        <div class="dot" style="background:#ff4466"></div>
+        <div class="alg-text">
+          <div class="alg-name">Función</div>
+          <div class="alg-val" id="eq-cubica">f(x) = 1·x³</div>
+        </div>
+      </div>
+
+      <div class="alg-item">
+        <div class="dot" style="background:#aaaaaa"></div>
+        <div class="alg-text">
+          <div class="alg-name">Número</div>
+          <div class="alg-val" id="val-a">a = 5</div>
+        </div>
+      </div>
+
+      <div class="alg-item">
+        <div class="dot" style="background:#4488ff"></div>
+        <div class="alg-text">
+          <div class="alg-name">Número</div>
+          <div class="alg-val" id="val-b">b = 1</div>
+        </div>
+      </div>
+
+      <div class="alg-item" id="pts-item" style="display:none">
+        <div class="dot" style="background:#aaaaaa"></div>
+        <div class="alg-text">
+          <div class="alg-name">Intersección</div>
+          <div class="alg-val" id="pts-val">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Controles</div>
+      <div class="slider-wrap">
+        <div class="slider-row">
+          <label>a</label>
+          <input type="range" id="sl-a" min="0.5" max="20" step="0.1" value="5">
+          <span id="lbl-a">5.0</span>
+        </div>
+        <div class="slider-row">
+          <label>k</label>
+          <input type="range" id="sl-k" min="-3" max="3" step="0.05" value="1">
+          <span id="lbl-k">1.00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="angle-box">
+      <div class="angle-val" id="angle-val">90°</div>
+      <div class="angle-lbl">Ángulo en intersección</div>
+    </div>
+
+    <div>
+      <div class="section-label">Solución</div>
+      <div class="formula-box">
+        <div>Familia original:</div>
+        <div class="eq">x² + 3y² = C</div>
+        <br>
+        <div>EDO original:</div>
+        <div class="eq">y' = −x/(3y)</div>
+        <br>
+        <div>EDO ortogonal:</div>
+        <div class="eq">y' = 3y/x</div>
+        <br>
+        <div>Solución:</div>
+        <div class="eq">y = kx³</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="gc"></canvas>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-line" style="background:#4a9eff"></div>
+        <span>x² + 3y² = C (elipses)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:#ff4466"></div>
+        <span>y = kx³ (cúbicas)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:#44ff99; height:1px; border-top: 1px dashed #44ff99"></div>
+        <span>Tangentes en intersección</span>
+      </div>
+    </div>
+    <div class="coord-display" id="coord-display">x: 0.00 &nbsp; y: 0.00</div>
+    <div class="hint">Arrastra para mover · Scroll para zoom</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+
+let a = 5, k = 1;
+let ox = 0, oy = 0, scale = 60;
+let dragging = false, lastX, lastY;
+
+function resize() {
+  canvas.width = canvas.offsetWidth * devicePixelRatio;
+  canvas.height = canvas.offsetHeight * devicePixelRatio;
+  draw();
+}
+
+// --- coordinate transforms ---
+function toScreen(wx, wy) {
+  return [
+    canvas.width/2 + (wx + ox) * scale * devicePixelRatio,
+    canvas.height/2 - (wy + oy) * scale * devicePixelRatio
+  ];
+}
+function toWorld(sx, sy) {
+  return [
+    (sx - canvas.width/2) / (scale * devicePixelRatio) - ox,
+    -(sy - canvas.height/2) / (scale * devicePixelRatio) - oy
+  ];
+}
+
+// --- drawing helpers ---
+function drawGrid() {
+  const W = canvas.width, H = canvas.height;
+  const dpr = devicePixelRatio;
+
+  // grid lines
+  ctx.strokeStyle = '#1e2a3a';
+  ctx.lineWidth = 1;
+  const step = scale * dpr;
+  const [x0, y0] = toScreen(0, 0);
+
+  for (let x = x0 % step; x < W; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = y0 % step; y < H; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // axes
+  ctx.strokeStyle = '#3a4a5a';
+  ctx.lineWidth = 1.5 * dpr;
+  ctx.beginPath(); ctx.moveTo(0, y0); ctx.lineTo(W, y0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0, H); ctx.stroke();
+
+  // tick labels
+  ctx.fillStyle = '#445566';
+  ctx.font = `${9 * dpr}px JetBrains Mono`;
+  ctx.textAlign = 'center';
+  const worldLeft = toWorld(0, 0)[0];
+  const worldRight = toWorld(W, 0)[0];
+  for (let i = Math.ceil(worldLeft); i <= Math.floor(worldRight); i++) {
+    if (i === 0) continue;
+    const [sx] = toScreen(i, 0);
+    ctx.fillText(i, sx, y0 + 14 * dpr);
+  }
+  ctx.textAlign = 'right';
+  const worldTop = toWorld(0, 0)[1];
+  const worldBot = toWorld(0, H)[1];
+  for (let i = Math.ceil(worldBot); i <= Math.floor(worldTop); i++) {
+    if (i === 0) continue;
+    const [, sy] = toScreen(0, i);
+    ctx.fillText(i, x0 - 6 * dpr, sy + 3 * dpr);
+  }
+}
+
+function plotImplicit(fn, color, lw, alpha = 1) {
+  // marching squares lite — sample grid
+  const W = canvas.width, H = canvas.height;
+  const dpr = devicePixelRatio;
+  const res = 2 * dpr;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lw * dpr;
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+
+  const cols = Math.ceil(W / res) + 1;
+  const rows = Math.ceil(H / res) + 1;
+
+  for (let r = 0; r < rows - 1; r++) {
+    for (let c = 0; c < cols - 1; c++) {
+      const sx = c * res, sy = r * res;
+      const corners = [
+        [sx, sy], [sx + res, sy], [sx + res, sy + res], [sx, sy + res]
+      ].map(([px, py]) => {
+        const [wx, wy] = toWorld(px, py);
+        return fn(wx, wy);
+      });
+      // check sign changes
+      const pos = corners.map(v => v > 0);
+      const any = pos.some(Boolean);
+      const all = pos.every(Boolean);
+      if (any && !all) {
+        // draw small cross in center
+        const cx = sx + res / 2, cy = sy + res / 2;
+        ctx.moveTo(cx - res * 0.6, cy);
+        ctx.lineTo(cx + res * 0.6, cy);
+      }
+    }
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function plotImplicitSmooth(fn, color, lw, alpha = 1) {
+  // better: trace contour by stepping
+  const W = canvas.width, H = canvas.height;
+  const dpr = devicePixelRatio;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lw * dpr;
+  ctx.globalAlpha = alpha;
+
+  const steps = 800;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * 2 * Math.PI;
+    // parametric approach for ellipse x²/a + y²/(a/3) = 1
+    // x² + 3y² = C  =>  x = sqrt(C)*cos(t), y = sqrt(C/3)*sin(t)
+    // We'll use this only for ellipses; for general use parametric
+    const val = fn(Math.cos(t), Math.sin(t)); // placeholder
+    // Actually trace with parametric directly in draw()
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawEllipses() {
+  const dpr = devicePixelRatio;
+  // draw family of ellipses x² + 3y² = C for various C
+  const Cvals = [1, 4, 9, 16, 25];
+  Cvals.forEach((C, idx) => {
+    const alpha = C === Math.round(a) || Math.abs(C - a) < 0.5 ? 1 : 0.3;
+    const lw = Math.abs(C - a) < 0.5 ? 2.5 : 1.2;
+    ctx.strokeStyle = `rgba(74,158,255,${alpha})`;
+    ctx.lineWidth = lw * dpr;
+    if (Math.abs(C - a) < 0.5) {
+      ctx.shadowColor = '#4a9eff';
+      ctx.shadowBlur = 8 * dpr;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+    // fill active ellipse
+    if (Math.abs(C - a) < 0.5) {
+      ctx.fillStyle = 'rgba(74,158,255,0.07)';
+      ctx.beginPath();
+      const steps = 400;
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * 2 * Math.PI;
+        const wx = Math.sqrt(C) * Math.cos(t);
+        const wy = Math.sqrt(C / 3) * Math.sin(t);
+        const [sx, sy] = toScreen(wx, wy);
+        i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    const steps = 400;
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * 2 * Math.PI;
+      const wx = Math.sqrt(C) * Math.cos(t);
+      const wy = Math.sqrt(C / 3) * Math.sin(t);
+      const [sx, sy] = toScreen(wx, wy);
+      i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  });
+
+  // active ellipse (a)
+  ctx.strokeStyle = '#4a9eff';
+  ctx.lineWidth = 2.5 * dpr;
+  ctx.shadowColor = '#4a9eff';
+  ctx.shadowBlur = 10 * dpr;
+  if (a > 0) {
+    ctx.beginPath();
+    const steps = 400;
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * 2 * Math.PI;
+      const wx = Math.sqrt(a) * Math.cos(t);
+      const wy = Math.sqrt(a / 3) * Math.sin(t);
+      const [sx, sy] = toScreen(wx, wy);
+      i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+}
+
+function drawCubics() {
+  const dpr = devicePixelRatio;
+  const W = canvas.width;
+  const kvals = [-2, -1, -0.5, 0.5, 1, 2];
+
+  kvals.forEach(kv => {
+    const alpha = Math.abs(kv - k) < 0.05 ? 0 : 0.2;
+    ctx.strokeStyle = `rgba(255,68,102,${alpha + 0.15})`;
+    ctx.lineWidth = 1 * dpr;
+    ctx.beginPath();
+    let started = false;
+    for (let sx = 0; sx <= W; sx += 1.5 * dpr) {
+      const [wx] = toWorld(sx, 0);
+      const wy = kv * wx * wx * wx;
+      const [, py] = toScreen(wx, wy);
+      if (!started) { ctx.moveTo(sx, py); started = true; }
+      else ctx.lineTo(sx, py);
+    }
+    ctx.stroke();
+  });
+
+  // active cubic
+  ctx.strokeStyle = '#ff4466';
+  ctx.lineWidth = 2.5 * dpr;
+  ctx.shadowColor = '#ff4466';
+  ctx.shadowBlur = 10 * dpr;
+  ctx.beginPath();
+  let started = false;
+  for (let sx = 0; sx <= W; sx += 1.5 * dpr) {
+    const [wx] = toWorld(sx, 0);
+    const wy = k * wx * wx * wx;
+    const [, py] = toScreen(wx, wy);
+    if (!started) { ctx.moveTo(sx, py); started = true; }
+    else ctx.lineTo(sx, py);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function getIntersections() {
+  // x² + 3y² = a  AND  y = kx³
+  // => x² + 3(kx³)² = a  => x² + 3k²x^6 = a
+  // solve numerically
+  const pts = [];
+  if (Math.abs(k) < 1e-9) return pts;
+
+  // search on x in [-10, 10]
+  const f = x => x * x + 3 * k * k * Math.pow(x, 6) - a;
+  const N = 2000;
+  let prev = f(-10);
+  for (let i = 1; i <= N; i++) {
+    const x = -10 + i * 20 / N;
+    const cur = f(x);
+    if (prev * cur < 0) {
+      // bisect
+      let lo = x - 20 / N, hi = x;
+      for (let j = 0; j < 40; j++) {
+        const mid = (lo + hi) / 2;
+        if (f(lo) * f(mid) < 0) hi = mid; else lo = mid;
+      }
+      const xr = (lo + hi) / 2;
+      const yr = k * xr * xr * xr;
+      pts.push([xr, yr]);
+    }
+    prev = cur;
+  }
+  return pts;
+}
+
+function drawTangents(pts) {
+  const dpr = devicePixelRatio;
+  pts.forEach(([px, py]) => {
+    // tangent to ellipse: slope = -px / (3*py)
+    const me = py !== 0 ? -px / (3 * py) : Infinity;
+    // tangent to cubic: slope = 3*k*px²
+    const mc = 3 * k * px * px;
+
+    const len = 2.5;
+
+    // ellipse tangent (green dashed)
+    ctx.strokeStyle = '#44ff99';
+    ctx.lineWidth = 1.2 * dpr;
+    ctx.setLineDash([4 * dpr, 4 * dpr]);
+    if (Math.abs(me) < 1000) {
+      const x1 = px - len, y1 = py + me * (-len);
+      const x2 = px + len, y2 = py + me * len;
+      const [sx1, sy1] = toScreen(x1, y1);
+      const [sx2, sy2] = toScreen(x2, y2);
+      ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(sx2, sy2); ctx.stroke();
+    }
+
+    // cubic tangent (light blue dashed)
+    ctx.strokeStyle = '#88ccff';
+    ctx.setLineDash([4 * dpr, 4 * dpr]);
+    const x1c = px - len, y1c = py + mc * (-len);
+    const x2c = px + len, y2c = py + mc * len;
+    const [sx1c, sy1c] = toScreen(x1c, y1c);
+    const [sx2c, sy2c] = toScreen(x2c, y2c);
+    ctx.beginPath(); ctx.moveTo(sx1c, sy1c); ctx.lineTo(sx2c, sy2c); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // angle marker
+    const [spx, spy] = toScreen(px, py);
+    ctx.strokeStyle = '#44ff99';
+    ctx.lineWidth = 1 * dpr;
+    ctx.beginPath();
+    ctx.arc(spx, spy, 10 * dpr, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // angle label
+    ctx.fillStyle = '#44ff99';
+    ctx.font = `bold ${9 * dpr}px JetBrains Mono`;
+    ctx.fillText('β=90°', spx + 12 * dpr, spy - 8 * dpr);
+
+    // point dot
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(spx, spy, 3 * dpr, 0, 2 * Math.PI);
+    ctx.fill();
+  });
+}
+
+function computeAngle(pts) {
+  if (pts.length === 0) return null;
+  const [px, py] = pts[0];
+  if (Math.abs(py) < 1e-6) return null;
+  const me = -px / (3 * py);
+  const mc = 3 * k * px * px;
+  const dot = (1 + me * mc);
+  const angle = Math.abs(Math.atan(Math.abs(me - mc) / Math.abs(1 + me * mc)) * 180 / Math.PI);
+  // for orthogonal, angle should be 90
+  return Math.round(Math.abs(dot) < 1e-6 ? 90 : (90 - angle));
+}
+
+function updateUI(pts) {
+  document.getElementById('eq-conica').textContent = `x² + 3y² = ${a.toFixed(1)}`;
+  document.getElementById('eq-cubica').textContent = `f(x) = ${k.toFixed(2)}·x³`;
+  document.getElementById('val-a').textContent = `a = ${a.toFixed(1)}`;
+  document.getElementById('val-b').textContent = `b = ${k.toFixed(2)}`;
+
+  if (pts.length > 0) {
+    document.getElementById('pts-item').style.display = 'flex';
+    const [px, py] = pts[0];
+    document.getElementById('pts-val').textContent =
+      `A₁ = (${px.toFixed(2)}, ${py.toFixed(2)})`;
+  } else {
+    document.getElementById('pts-item').style.display = 'none';
+  }
+
+  document.getElementById('angle-val').textContent = '90°';
+}
+
+function draw() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // background
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  drawGrid();
+  drawEllipses();
+  drawCubics();
+
+  const pts = getIntersections();
+  drawTangents(pts);
+  updateUI(pts);
+}
+
+// --- controls ---
+document.getElementById('sl-a').addEventListener('input', function() {
+  a = parseFloat(this.value);
+  document.getElementById('lbl-a').textContent = a.toFixed(1);
+  draw();
+});
+document.getElementById('sl-k').addEventListener('input', function() {
+  k = parseFloat(this.value);
+  document.getElementById('lbl-k').textContent = k.toFixed(2);
+  draw();
+});
+
+// --- pan & zoom ---
+canvas.addEventListener('mousedown', e => {
+  dragging = true;
+  lastX = e.clientX; lastY = e.clientY;
+});
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const [wx, wy] = toWorld(
+    (e.clientX - rect.left) * devicePixelRatio,
+    (e.clientY - rect.top) * devicePixelRatio
+  );
+  document.getElementById('coord-display').textContent =
+    `x: ${wx.toFixed(2)}   y: ${wy.toFixed(2)}`;
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  ox += dx / scale;
+  oy -= dy / scale;
+  lastX = e.clientX; lastY = e.clientY;
+  draw();
+});
+canvas.addEventListener('mouseup', () => dragging = false);
+canvas.addEventListener('mouseleave', () => dragging = false);
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.9;
+  scale *= factor;
+  draw();
+}, { passive: false });
+
+window.addEventListener('resize', resize);
+resize();
+</script>
+</body>
+</html>
